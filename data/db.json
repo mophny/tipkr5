@@ -1,0 +1,29 @@
+{
+  "boards": [
+    {
+      "id": "b_mj9qgs5byoltq4",
+      "name": "My Kanban Board"
+    }
+  ],
+  "columns": [
+    {
+      "id": "c_mj9qgs5bn7w0el",
+      "boardId": "b_mj9qgs5byoltq4",
+      "name": "To Do",
+      "order": 0
+    },
+    {
+      "id": "c_mj9qgs5b25ahng",
+      "boardId": "b_mj9qgs5byoltq4",
+      "name": "In Process",
+      "order": 1
+    },
+    {
+      "id": "c_mj9qgs5bnpewgm",
+      "boardId": "b_mj9qgs5byoltq4",
+      "name": "Done",
+      "order": 2
+    }
+  ],
+  "tasks": []
+}

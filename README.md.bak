@@ -1,0 +1,104 @@
+# Мини‑канбан доска — Express.js API
+
+Полноценное учебное Express‑приложение: сервер, маршруты, middleware, работа с параметрами/запросами, отдача статики и модульная архитектура (routes + controllers). Тема: «Мини‑канбан доска» (вариант 32).
+
+## Возможности
+- Базовый сервер Express с JSON/URL‑encoded парсерами
+- Свой middleware‑логгер и обработчик ошибок
+- Раздача статических файлов из `public/` (есть мини‑клиент)
+- API для досок, колонок и задач (CRUD)
+- Query‑фильтры: поиск задач/досок, фильтр по статусу
+- Простое файловое хранилище `data/db.json` (создаётся автоматически)
+
+## Быстрый старт
+
+```bash
+npm install
+npm run dev # авто‑перезапуск через nodemon
+# или
+npm start   # обычный запуск
+```
+
+Откройте http://localhost:3000 — мини‑клиент поможет быстро проверить API.
+
+## Структура
+
+- `index.js` — точка входа, подключение middleware, статики и роутеров
+- `routes/` — роутеры для boards/columns/tasks с вложенностью
+- `controllers/` — логика обработки запросов
+- `middleware/` — логгер и error handler
+- `data/store.js` — чтение/запись JSON‑хранилища и генерация id
+- `public/` — статическая страница для ручной проверки
+
+## Эндпоинты
+
+Базовый префикс: `/api`.
+
+- GET `/api/health` — проверка здоровья
+
+Boards
+- GET `/api/boards?search=…`
+- POST `/api/boards` body: `{ name }`
+- GET `/api/boards/:boardId`
+- PUT `/api/boards/:boardId` body: `{ name? }`
+- DELETE `/api/boards/:boardId`
+
+Columns (в рамках board)
+- GET `/api/boards/:boardId/columns`
+- POST `/api/boards/:boardId/columns` body: `{ name }`
+- GET `/api/boards/:boardId/columns/:columnId`
+- PUT `/api/boards/:boardId/columns/:columnId` body: `{ name? }`
+- DELETE `/api/boards/:boardId/columns/:columnId`
+
+Tasks (в рамках column)
+- GET `/api/boards/:boardId/columns/:columnId/tasks?q=…&status=…`
+- POST `/api/boards/:boardId/columns/:columnId/tasks` body: `{ title, description?, status? }`
+- GET `/api/boards/:boardId/columns/:columnId/tasks/:taskId`
+- PUT `/api/boards/:boardId/columns/:columnId/tasks/:taskId` body: `{ title?, description?, status?, columnId? }`
+- DELETE `/api/boards/:boardId/columns/:columnId/tasks/:taskId`
+
+## Примеры запросов (curl)
+
+```bash
+# создать доску
+curl -s -X POST http://localhost:3000/api/boards \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Учебная доска"}'
+
+# список досок
+curl -s http://localhost:3000/api/boards
+
+# создать колонку в доске b123
+curl -s -X POST http://localhost:3000/api/boards/b123/columns \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"To Do"}'
+
+# создать задачу в колонке c123
+curl -s -X POST http://localhost:3000/api/boards/b123/columns/c123/tasks \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"Сделать работу","description":"Express.js","status":"todo"}'
+
+# поиск задач в колонке
+curl -s 'http://localhost:3000/api/boards/b123/columns/c123/tasks?q=работу&status=todo'
+```
+
+## Скриншот (демо)
+
+Мини‑клиент в `public/index.html` — можно сделать снимок страницы после создания пары сущностей и добавить в репозиторий.
+
+---
+
+Учебный проект для закрепления работы с Express: сервер, маршрутизация, middleware, параметры, запросы, статика и модульная архитектура.
+# GitHub Codespaces ♥️ Express
+
+Welcome to your shiny new Codespace running Express! We've got everything fired up and running for you to explore Express.
+
+You've got a blank canvas to work on from a git perspective as well. There's a single initial commit with the what you're seeing right now - where you go from here is up to you!
+
+Everything you do here is contained within this one codespace. There is no repository on GitHub yet. If and when you’re ready you can click "Publish Branch" and we’ll create your repository and push up your project. If you were just exploring then and have no further need for this code then you can simply delete your codespace and it's gone forever.
+
+To run this application:
+
+```
+npm start
+```

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Мини‑канбан API (демо)</title>
+    <style>
+      :root{
+        --bg:#0f172a; /* slate-900 */
+        --fg:#e5e7eb; /* gray-200 */
+        --muted:#94a3b8; /* slate-400 */
+        --col-todo:#5b6b8f; /* desaturated indigo */
+        --col-doing:#1e61dc; /* vibrant blue */
+        --col-done:#10b981; /* emerald */
+        --card-radius:16px;
+      }
+      *{box-sizing:border-box}
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Noto Sans', Arial, 'Apple Color Emoji', 'Segoe UI Emoji'; margin: 0; background:var(--bg); color:var(--fg); }
+      header { padding:32px 24px 8px; text-align:center; }
+      h1 { margin:0; font-weight:800; font-size:42px; letter-spacing:.3px; }
+      .container{ padding: 8px 24px 32px; }
+      .grid { display:grid; grid-template-columns: repeat(3, minmax(260px, 1fr)); gap:24px; align-items:stretch; }
+      .column { border-radius: var(--card-radius); padding:20px; display:flex; flex-direction:column; min-height:420px; }
+      .title { font-weight:700; font-size:20px; margin-bottom:18px; }
+      .tasks { display:flex; flex-direction:column; gap:12px; flex:1; }
+      .task { border-radius:12px; height:40px; opacity:.9; display:flex; align-items:center; padding:0 12px; font-weight:600; }
+      .todo { background: rgba(255,255,255,.08) }
+      .doing { background: rgba(255,255,255,.12) }
+      .done { background: rgba(255,255,255,.18) }
+      .controls { margin-top:14px; display:flex; gap:8px; }
+      input { background: rgba(255,255,255,.06); color:var(--fg); border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:.55rem .7rem; outline: none; width:100%; }
+      button { background: rgba(255,255,255,.12); color:var(--fg); border:1px solid rgba(255,255,255,.14); border-radius:10px; padding:.55rem .8rem; cursor:pointer; }
+      button:hover{ background: rgba(255,255,255,.18) }
+      button:disabled{ opacity:.3; cursor:not-allowed }
+      .small-btn { padding:.3rem .5rem; font-size:.85rem; min-width:32px }
+      .muted { color:var(--muted); font-size:.95rem; }
+      .row { display:flex; gap:8px; align-items:center; }
+      .arrow { width:34px }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Канбан‑доска</h1>
+    </header>
+    <div class="container">
+      <div class="row" style="margin-bottom:12px; gap:12px">
+        <button onclick="loadBoard()">Обновить</button>
+      </div>
+      <div id="board"></div>
+    </div>
+
+    <script>
+      async function loadBoard() {
+        const list = await (await fetch('/api/boards')).json()
+        const b = list[0]
+        const container = document.getElementById('board')
+        if (!b) { container.innerHTML = '<div class="muted">Доска ещё не создана (перезапустите сервер)</div>'; return }
+        const data = await (await fetch(`/api/boards/${b.id}`)).json()
+        const columns = [...data.columns].sort((a,b)=> (a.order??0)-(b.order??0) || a.name.localeCompare(b.name))
+        const tasks = data.tasks
+        const colMap = new Map(columns.map((c,i)=>[c.id,{...c,idx:i}]))
+
+        const grid = document.createElement('div')
+        grid.className = 'grid'
+
+        const getColClass = (idx)=> idx===0?'todo':idx===1?'doing':'done'
+        const getColColor = (idx)=> idx===0? 'var(--col-todo)' : idx===1? 'var(--col-doing)' : 'var(--col-done)'
+
+        columns.forEach((col, idx) => {
+          const items = tasks.filter(t=>t.columnId===col.id)
+          const colEl = document.createElement('div')
+          colEl.className = 'column'
+          colEl.style.background = getColColor(idx)
+          const taskListHtml = items.map(t=>`
+            <div class="task-item" style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
+              <div class="task ${getColClass(idx)}" style="flex:1">${t.title}</div>
+              <button class="small-btn" onclick="moveTaskLeft('${b.id}','${col.id}','${t.id}',${idx})" ${idx===0?'disabled':''}>&larr;</button>
+              <button class="small-btn" onclick="moveTaskRight('${b.id}','${col.id}','${t.id}',${idx})" ${idx===2?'disabled':''}>&rarr;</button>
+              <button class="small-btn" onclick="delTask('${b.id}','${col.id}','${t.id}')">✕</button>
+            </div>
+          `).join('') || `<div class="muted">Нет задач</div>`
+          colEl.innerHTML = `
+            <div class="title">${col.name}</div>
+            <div class="tasks">
+              ${taskListHtml}
+            </div>
+            <div class="controls row">
+              <input id="t_${col.id}" placeholder="Новая задача" />
+              <button onclick="addTask('${b.id}','${col.id}')">Добавить</button>
+              <span class="muted" style="margin-left:auto">${items.length}</span>
+            </div>
+          `
+          grid.appendChild(colEl)
+        })
+
+        container.innerHTML = ''
+        container.appendChild(grid)
+        window.__columns = columns // для moveTask
+      }
+
+      async function addTask(boardId, columnId) {
+        const el = document.getElementById('t_'+columnId)
+        const title = (el.value||'').trim()
+        if (!title) return
+        await fetch(`/api/boards/${boardId}/columns/${columnId}/tasks`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title}) })
+        el.value = ''
+        await loadSingleBoard()
+      }
+
+      async function delTask(boardId, columnId, taskId) {
+        await fetch(`/api/boards/${boardId}/columns/${columnId}/tasks/${taskId}`, { method:'DELETE' })
+        await loadSingleBoard()
+      }
+
+      async function moveTaskLeft(boardId, columnId, taskId, currentIdx) {
+        const cols = window.__columns || []
+        if (currentIdx <= 0) return
+        const targetCol = cols[currentIdx - 1]
+        await fetch(`/api/boards/${boardId}/columns/${columnId}/tasks/${taskId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ columnId: targetCol.id }) })
+        await loadBoard()
+      }
+
+      async function moveTaskRight(boardId, columnId, taskId, currentIdx) {
+        const cols = window.__columns || []
+        if (currentIdx >= cols.length - 1) return
+        const targetCol = cols[currentIdx + 1]
+        await fetch(`/api/boards/${boardId}/columns/${columnId}/tasks/${taskId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ columnId: targetCol.id }) })
+        await loadBoard()
+      }
+
+      loadBoard()
+    </script>
+  </body>
+  </html>

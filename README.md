@@ -1,13 +1,27 @@
-# GitHub Codespaces ♥️ Express
+# Мини-канбан доска — Express.js API
 
-Welcome to your shiny new Codespace running Express! We've got everything fired up and running for you to explore Express.
+Полноценное учебное Express-приложение для управления задачами в стиле канбан-доски.
 
-You've got a blank canvas to work on from a git perspective as well. There's a single initial commit with the what you're seeing right now - where you go from here is up to you!
+## 📋 Описание
 
-Everything you do here is contained within this one codespace. There is no repository on GitHub yet. If and when you’re ready you can click "Publish Branch" and we’ll create your repository and push up your project. If you were just exploring then and have no further need for this code then you can simply delete your codespace and it's gone forever.
+Мини-канбан доска с тремя статичными колонками:
+- To Do — задачи к выполнению
+- In Process — задачи в работе  
+- Done — завершённые задачи
 
-To run this application:
 
+
+## 🚀 Быстрый старт
+
+
+```bash
+npm install
 ```
-npm start
-```
+
+
+```bash
+# Обычный запуск
+ npm start
+Приложение будет доступно по адресу: **http://localhost:3000**
+
+
